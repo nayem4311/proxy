@@ -10,36 +10,36 @@ app.use((req, res, next) => {
   next();
 });
 
-// Proxy route
 app.get('/proxy', (req, res) => {
   const url = req.query.url;
   if (!url) return res.status(400).send('No URL provided');
 
-  // Check if it's an HLS playlist (m3u8)
-  if (url.endsWith('.m3u8')) {
-    // Fetch the m3u8 file
-    request.get(url, (error, response, body) => {
-      if (error) return res.status(500).send('Error fetching the URL');
+  console.log("Fetching URL:", url);  // Log the URL being fetched
 
-      // Modify the body to route segment files through the proxy
+  if (url.endsWith('.m3u8')) {
+    request.get(url, (error, response, body) => {
+      if (error) {
+        console.error("Error fetching the m3u8 file:", error);
+        return res.status(500).send('Error fetching the URL');
+      }
+
       const modifiedBody = body.replace(/(https?:\/\/[^\s]+)/g, (match) => {
         return `https://proxy-eight-theta-46.vercel.app/proxy?url=${encodeURIComponent(match)}`;
       });
 
-      // Send modified m3u8 file back
       res.setHeader('Content-Type', 'application/vnd.apple.mpegurl');
       res.send(modifiedBody);
     });
   } else {
-    // Proxy the video segments or any other file
-    request
-      .get(url)
+    request.get(url)
       .on('error', (err) => {
+        console.error("Error fetching the segment:", err);
         res.status(500).send('Error fetching the URL');
       })
       .pipe(res);
   }
 });
+
 
 // Start the server
 app.listen(3000, () => {
