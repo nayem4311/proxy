@@ -19,9 +19,13 @@ app.get('/proxy', (req, res) => {
     return res.status(400).send('Invalid URL');
   }
 
-  // Stream the content via proxy
+  // Fetch the content from the URL
   request
     .get(url)
+    .on('response', (response) => {
+      // Set the appropriate content-type header
+      res.setHeader('Content-Type', response.headers['content-type']);
+    })
     .on('error', (err) => {
       res.status(500).send('Error fetching the URL');
     })
